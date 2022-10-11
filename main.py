@@ -5,6 +5,56 @@ from gurobipy import GRB
 from plot_util import plot_gurobi_variables
 
 
+class BeerGameGurobi:
+
+    def __init__(self, demands=None, init_orders=None, init_backlogs=None, init_inventory=None):
+        self.J = 4  # num of facilities
+        self.K = 100  # num of periods
+
+        self.L_info = [2, 2, 2, 1]  # info lead times
+        self.L_ship = [2, 2, 2, 2]  # shipment lead times
+
+        self.c_h = [1.0, 0.75, 0.5, 0.25]
+        self.c_b = [10.0, 0.0, 0.0, 0.0]
+
+        self.model = self.init_model_and_variables(demands, init_orders, init_backlogs, init_inventory)
+
+    def init_model_and_variables(self, demands, init_orders, init_backlogs, init_inventory):
+        if demands is None:
+            demands = np.round(np.maximum(10 + 2 * np.random.randn(self.K), 0)).astype(int)
+
+        if init_orders is None:
+            init_orders = [[4] * 4] * 4
+
+        if init_inventory is None:
+            init_inventory = [8] * 4
+
+        if init_backlogs is None:
+            init_backlogs = [0] * 4
+
+        model = gp.Model('beer game')
+
+        key_facilities_period = list(product(range(J), range(-1, K)))
+        key_facilities_period_with_init = list(product(range(J), range(-4, K)))
+
+        # define decisions variables
+        self._orders = model.addVars(key_facilities_period_with_init, vtype=GRB.CONTINUOUS, name='orders')
+        self._inventory = model.addVars(key_facilities_period, vtype=GRB.CONTINUOUS, name='inventory')
+        self._backlogs = model.addVars(key_facilities_period_with_init, vtype=GRB.CONTINUOUS, name='backlogs')
+        self._shipments = model.addVars(key_facilities_period_with_init, vtype=GRB.CONTINUOUS, name='shipments')
+
+        model.addConstrs(
+            (self._orders[j, k] == init_orders[j][k + 4] for j in range(J) for k in range(-4, 0)), name='init_orders')
+
+        model.addConstrs(
+            (self._inventory[j, -1] == init_inventory[j] for j in range(J)), name='init_inv')
+
+        model.addConstrs(
+            (self._backlogs[j, -1] == init_backlogs[j] for j in range(J)), name='init_backlogs')
+
+        return model
+
+
 def solve_by_gurobi(demands=None, init_orders=None, init_backlogs=None, init_inventory=None):
     J = 4  # num of facilities
     K = 100  # num of periods
