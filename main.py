@@ -12,6 +12,7 @@ import sys
 
 sys.path.insert(0, os.path.abspath("./multi-echelon-drl/"))
 
+# noinspection PyUnresolvedReferences
 from register_envs import register_envs
 
 register_envs()
@@ -206,7 +207,7 @@ def solve_with_perfect_info(num_instances: int = 100):
     pd.DataFrame(total_rewards, columns=["Cost"]).to_csv("results/cost_perfect_info.csv")
 
 
-def solve_iterative_MIP_with_expected_demand(num_instances: int = 100):
+def solve_once_MIP_with_expected_demand(num_instances: int = 100):
 
     env_name = "BeerGameNormalMultiFacility-v0"
     env = gym.make(env_name)
@@ -217,10 +218,48 @@ def solve_iterative_MIP_with_expected_demand(num_instances: int = 100):
         np.random.seed(seed)
         env.reset()
 
-        # init_inv = [node.current_inventory for key, node in env.sn.nodes.items()][:-1]
-        # init_backlogs = [node.unfilled_demand for key, node in env.sn.nodes.items()][:-1]
-        # init_orders = [arc.previous_orders[::-1] for key, arc in env.sn.arcs.items()][::-1]
-        # init_shipments = [arc.shipments.shipment_quantity_by_time for key, arc in env.sn.arcs.items()][::-1]
+        demands = env.sn.nodes["retailer"].demands._demands
+
+        init_inv = [node.current_inventory for key, node in env.sn.nodes.items()][:-1]
+        init_backlogs = [node.unfilled_demand for key, node in env.sn.nodes.items()][:-1]
+        init_orders = [arc.previous_orders[::-1] for key, arc in env.sn.arcs.items()][::-1]
+        init_shipments = [arc.shipments.shipment_quantity_by_time for key, arc in env.sn.arcs.items()][::-1]
+
+        m, orders, inventory, backlogs, shipments = solve_MIP(
+            demands=[10] * len(demands),
+            init_inventory=init_inv,
+            init_backlogs=init_backlogs,
+            init_shipments=init_shipments,
+            init_orders=init_orders,
+        )
+
+        terminated = False
+        k = 0
+        total_reward = 0
+
+        while not terminated:
+
+            actions = [orders[(j, k)].x for j in range(4)]
+            obs, reward, terminated, info = env.step(actions)
+            k += 1
+            total_reward += reward
+
+        total_rewards.append(total_reward)
+        print("Total reward:", total_reward)
+
+    pd.DataFrame(total_rewards, columns=["Cost"]).to_csv("results/cost_once_MIP.csv")
+
+
+def solve_iterative_MIP_with_expected_demand(num_instances: int = 100):
+
+    env_name = "BeerGameNormalMultiFacility-v0"
+    env = gym.make(env_name)
+
+    total_rewards = []
+    for seed in tqdm(range(num_instances)):
+
+        np.random.seed(seed)
+        env.reset()
 
         demands = env.sn.nodes["retailer"].demands._demands
 
@@ -257,6 +296,7 @@ def solve_iterative_MIP_with_expected_demand(num_instances: int = 100):
 
 def main():
     solve_with_perfect_info(10)
+    solve_once_MIP_with_expected_demand(10)
     solve_iterative_MIP_with_expected_demand(10)
 
 
