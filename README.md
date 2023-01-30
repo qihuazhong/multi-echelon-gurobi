@@ -1,11 +1,20 @@
 # Introduction
 
-MIP benchmark for a beer game (Multi-echelon inventory management problem with four facilities) with perfect information using Gurobi.
+MIP benchmarks for a beer game (Multi-echelon inventory management problem with four facilities) using Gurobi.
 
-## Run
+## Install & Run
 
 ```shell
+# Clone repo
+$ git clone git@github.com:qihuazhong/multi-echelon-gurobi.git
+
+# Install python dependencies
+$ pip install -r requirements.txt
+# Install multi-echelon-inventory environment
 $ git clone -b dev-single-agent git@github.com:qihuazhong/multi-echelon-drl.git 
+
+# Run
+$ python main.py
 ```
 
 ## MIP formulation
@@ -26,3 +35,18 @@ x^{j}_{k}, y^{j}_{k} &\in \{0, 1\} \forall j \in J, k \in {K}\\
 I^{j}_{k}, B^{j}_{k}, P^{j}_{k}, E^{j}_{k} &\geq 0, \forall j \in J, k \in K
 \end{aligned}
 $$
+
+## Results sample
+
+| Instance | Cost    | iterative_MIP | once_MIP   |
+| -------- | ------- | ------------- | ---------- |
+| 0        | -206.00 | -4,209.25     | -11,474.25 |
+| 1        | -206.00 | -3,770.00     | -1,718.50  |
+| 2        | -189.50 | -4,214.00     | -12,394.75 |
+| 3        | -452.00 | -2,933.25     | -1,861.50  |
+| 4        | -247.25 | -4,112.75     | -15,235.75 |
+| 5        | -276.50 | -4,262.00     | -10,819.75 |
+| 6        | -514.00 | -5,713.50     | -22,833.25 |
+| 7        | -276.50 | -4,015.00     | -1,894.00  |
+| 8        | -801.50 | -4,672.75     | -5,959.50  |
+| 9        | -203.25 | -3,836.00     | -1,176.50  |
