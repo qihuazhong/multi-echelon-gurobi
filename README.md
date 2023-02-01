@@ -6,13 +6,13 @@ MIP benchmarks for a beer game (Multi-echelon inventory management problem with 
 
 ```shell
 # Clone repo
-$ git clone git@github.com:qihuazhong/multi-echelon-gurobi.git
+$ git clone https://github.com/qihuazhong/multi-echelon-gurobi.git
 $ cd multi-echelon-gurobi
 
 # Install python dependencies
 $ pip install -r requirements.txt
 # Install multi-echelon-inventory environment
-$ git clone -b dev-single-agent git@github.com:qihuazhong/multi-echelon-drl.git 
+$ git clone -b dev-single-agent https://github.com/qihuazhong/multi-echelon-drl.git
 
 # Run
 $ python main.py
