@@ -151,7 +151,7 @@ def solve_MIP(demands=None, init_orders=None, init_backlogs=None, init_inventory
 
 
 def solve_with_perfect_info(num_instances: int = 100):
-    env_name = "BeerGameNormalMultiFacility-v0"
+    env_name = "BeerGameNormalMultiFacilityFullInfo-v0"
     env = gym.make(env_name)
 
     total_rewards = []
@@ -252,7 +252,7 @@ def solve_once_MIP_with_expected_demand(num_instances: int = 100):
 
 def solve_iterative_MIP_with_expected_demand(num_instances: int = 100):
 
-    env_name = "BeerGameNormalMultiFacility-v0"
+    env_name = "BeerGameNormalMultiFacilityFullInfo-v0"
     env = gym.make(env_name)
 
     total_rewards = []
