@@ -1,3 +1,4 @@
+import argparse
 from itertools import product
 import gym
 import numpy as np
@@ -40,18 +41,23 @@ def define_bin_variables(model, J: int, K: int):
     return _x, _y
 
 
-def solve_MIP(demands=None, init_orders=None, init_backlogs=None, init_inventory=None, init_shipments=None):
+def solve_MIP(
+    scenario: str, demands=None, init_orders=None, init_backlogs=None, init_inventory=None, init_shipments=None
+):
     J = 4  # num of facilities
     K = len(demands)  # number of periods
 
     L_info = [2, 2, 2, 1]  # info lead times
     L_ship = [2, 2, 2, 2]  # shipment lead times
 
-    c_h = [1.0, 0.75, 0.5, 0.25]
-    c_b = [10.0, 0.00000001, 0.00000001, 0.00000001]  # a small positive value to prevent excessive ordering
-
-    #     c_h = [0.5, 0.5, 0.5, 0.5]
-    #     c_b = [1.0, 1.0, 1.0, 1.0]
+    if scenario == "basic":
+        c_h = [1.0, 0.75, 0.5, 0.25]
+        c_b = [10.0, 0.00000001, 0.00000001, 0.00000001]  # a small positive value to prevent excessive ordering
+    elif scenario == "complex":
+        c_h = [0.5, 0.5, 0.5, 0.5]
+        c_b = [1.0, 1.0, 1.0, 1.0]
+    else:
+        raise ValueError("Unknown Scenario")
 
     if demands is None:
         demands = np.round(np.maximum(10 + 2 * np.random.randn(K), 0)).astype(int)
@@ -150,8 +156,14 @@ def solve_MIP(demands=None, init_orders=None, init_backlogs=None, init_inventory
     return model, _orders, _inventory, _backlogs, _shipments
 
 
-def solve_with_perfect_info(num_instances: int = 100):
-    env_name = "BeerGameNormalMultiFacilityFullInfo-v0"
+def solve_with_perfect_info(scenario: str, num_instances: int = 100):
+    if scenario == "basic":
+        env_name = "BeerGameNormalMultiFacilityFullInfo-v0"
+    elif scenario == "complex":
+        env_name = "BeerGameUniformMultiFacilityFullInfo-v0"
+    else:
+        raise ValueError("Unknown Scenario")
+
     env = gym.make(env_name)
 
     total_rewards = []
@@ -172,6 +184,7 @@ def solve_with_perfect_info(num_instances: int = 100):
         demands = env.sn.nodes["retailer"].demands._demands
 
         m, orders, inventory, backlogs, shipments = solve_MIP(
+            scenario=scenario,
             demands=demands,
             init_inventory=init_inv,
             init_backlogs=init_backlogs,
@@ -197,21 +210,29 @@ def solve_with_perfect_info(num_instances: int = 100):
         print(
             "Actual total reward:",
             total_reward,
-            ", MIP result",
+            ", MIP result,",
             m.objVal,
-            ", Passed:",
+            "Passed:",
             abs(m.objVal + total_reward) < 0.01,
         )
         assert abs(m.objVal + total_reward) < 0.01
 
-    pd.DataFrame(total_rewards, columns=["Cost"]).to_csv("results/cost_perfect_info.csv")
+    pd.DataFrame(total_rewards, columns=["Cost"]).to_csv(f"results/cost_perfect_info_{scenario}.csv")
 
 
-def solve_once_MIP_with_expected_demand(num_instances: int = 100):
+def solve_once_MIP_with_expected_demand(scenario: str, num_instances: int = 100):
+    if scenario == "basic":
+        env_name = "BeerGameNormalMultiFacilityFullInfo-v0"
+        mean_demand = 10
+    elif scenario == "complex":
+        env_name = "BeerGameUniformMultiFacilityFullInfo-v0"
+        mean_demand = 4
+    else:
+        raise ValueError("Unknown Scenario")
 
-    env_name = "BeerGameNormalMultiFacility-v0"
     env = gym.make(env_name)
 
+    print(f"Starting solving {scenario} scenario once with expected demand")
     total_rewards = []
     for seed in tqdm(range(num_instances)):
 
@@ -226,7 +247,8 @@ def solve_once_MIP_with_expected_demand(num_instances: int = 100):
         init_shipments = [arc.shipments.shipment_quantity_by_time for key, arc in env.sn.arcs.items()][::-1]
 
         m, orders, inventory, backlogs, shipments = solve_MIP(
-            demands=[10] * len(demands),
+            scenario=scenario,
+            demands=[mean_demand] * len(demands),
             init_inventory=init_inv,
             init_backlogs=init_backlogs,
             init_shipments=init_shipments,
@@ -247,14 +269,23 @@ def solve_once_MIP_with_expected_demand(num_instances: int = 100):
         total_rewards.append(total_reward)
         print("Total reward:", total_reward)
 
-    pd.DataFrame(total_rewards, columns=["Cost"]).to_csv("results/cost_once_MIP.csv")
+    pd.DataFrame(total_rewards, columns=["Cost"]).to_csv(f"results/cost_once_MIP_{scenario}.csv")
 
 
-def solve_iterative_MIP_with_expected_demand(num_instances: int = 100):
+def solve_iterative_MIP_with_expected_demand(scenario: str, num_instances: int = 100):
 
-    env_name = "BeerGameNormalMultiFacilityFullInfo-v0"
+    if scenario == "basic":
+        env_name = "BeerGameNormalMultiFacilityFullInfo-v0"
+        mean_demand = 10
+    elif scenario == "complex":
+        env_name = "BeerGameUniformMultiFacilityFullInfo-v0"
+        mean_demand = 4
+    else:
+        raise ValueError("Unknown Scenario")
+
     env = gym.make(env_name)
 
+    print(f"Starting solving {scenario} scenario iteratively with expected demand")
     total_rewards = []
     for seed in tqdm(range(num_instances)):
 
@@ -276,7 +307,8 @@ def solve_iterative_MIP_with_expected_demand(num_instances: int = 100):
             init_shipments = [arc.shipments.shipment_quantity_by_time for key, arc in env.sn.arcs.items()][::-1]
 
             m, orders, inventory, backlogs, shipments = solve_MIP(
-                demands=[demands[k]] + [10] * len(demands[k + 1 :]),
+                scenario=scenario,
+                demands=[demands[k]] + [mean_demand] * len(demands[k + 1 :]),
                 init_inventory=init_inv,
                 init_backlogs=init_backlogs,
                 init_shipments=init_shipments,
@@ -291,13 +323,24 @@ def solve_iterative_MIP_with_expected_demand(num_instances: int = 100):
         total_rewards.append(total_reward)
         print("Total reward:", total_reward)
 
-    pd.DataFrame(total_rewards, columns=["Cost"]).to_csv("results/cost_iterative_MIP.csv")
+    pd.DataFrame(total_rewards, columns=["Cost"]).to_csv(f"results/cost_iterative_MIP_{scenario}.csv")
 
 
 def main():
-    solve_with_perfect_info(10)
-    solve_once_MIP_with_expected_demand(10)
-    solve_iterative_MIP_with_expected_demand(10)
+    parser = argparse.ArgumentParser()
+
+    # Adding required argument
+    parser.add_argument("--scenario", type=str, required=True, help="complex or basic")
+    parser.add_argument("--n-instances", type=int, required=True, help="Number of instances to run")
+    args = parser.parse_args()
+
+    scenario: str = args.scenario
+    n_instances: int = args.n_instances
+
+    solve_with_perfect_info(scenario=scenario, num_instances=n_instances)
+    solve_once_MIP_with_expected_demand(scenario=scenario, num_instances=n_instances)
+    solve_iterative_MIP_with_expected_demand(scenario=scenario, num_instances=n_instances)
 
 
-main()
+if __name__ == "__main__":
+    main()
