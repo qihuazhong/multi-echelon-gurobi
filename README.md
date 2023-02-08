@@ -6,16 +6,16 @@ MIP benchmarks for a beer game (Multi-echelon inventory management problem with 
 
 ```shell
 # Clone repo
-$ git clone https://github.com/qihuazhong/multi-echelon-gurobi.git
-$ cd multi-echelon-gurobi
+git clone https://github.com/qihuazhong/multi-echelon-gurobi.git
+cd multi-echelon-gurobi
 
 # Install python dependencies
-$ pip install -r requirements.txt
+pip install -r requirements.txt
 # Install multi-echelon-inventory environment
-$ git clone -b dev-single-agent https://github.com/qihuazhong/multi-echelon-drl.git
+git clone -b dev-single-agent https://github.com/qihuazhong/multi-echelon-drl.git
 
 # Run
-$ python main.py
+python main.py --scenario basic --n-instances 10
 ```
 
 ## MIP formulation
@@ -37,7 +37,7 @@ I^{j}_{k}, B^{j}_{k}, P^{j}_{k}, E^{j}_{k} &\geq 0, \forall j \in J, k \in K
 \end{aligned}
 $$
 
-## Results sample
+## Result Examples
 
 | Instance | Cost    | iterative_MIP | once_MIP   |
 | -------- | ------- | ------------- | ---------- |
